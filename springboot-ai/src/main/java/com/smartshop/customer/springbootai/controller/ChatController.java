@@ -35,4 +35,19 @@ public class ChatController {
     public ResponseEntity<String> sendMessage(@RequestParam("message") String message) {
         return ResponseEntity.ok(openAiChatClient.prompt(message).call().content());
     }
+
+    @GetMapping("/system-chat")
+    public ResponseEntity<String> sendSystemMessage(@RequestParam("message") String message) {
+        return ResponseEntity.ok(openAiChatClient.prompt()
+                .system("""
+                        You are an internal HR assistant.\s
+                        You will answer questions about HR policies, benefits, and procedures.\s
+                        If user asks for help with anything outside of these topics, kindly inform them that you can only assist with queries related to HR policies.\s
+                        If you don't know the answer, respond with "I'm not sure about that.\s
+                        Please contact HR for assistance.
+                        """)
+                .user(message)
+                .call()
+                .content());
+    }
 }
