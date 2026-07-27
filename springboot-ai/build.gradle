@@ -29,10 +29,11 @@ dependencies {
 //    implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
 
 //    -------ollama---------This dependency is used to connect with ollama which is downloaded from ollama website
-//    implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
+    implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
 
 //    -------openai for docker gemma3---------This is openai model dependency
     implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'

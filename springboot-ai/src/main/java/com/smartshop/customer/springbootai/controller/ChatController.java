@@ -1,6 +1,7 @@
 package com.smartshop.customer.springbootai.controller;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,14 +25,14 @@ public class ChatController {
 //        return ResponseEntity.ok(chatClient.call(message));
 //    }
 
-    private final ChatClient chatClient;
+    private final ChatClient openAiChatClient;
 
-    public ChatController(ChatClient.Builder chatClientBuilder) {
-        this.chatClient = chatClientBuilder.build();
+    public ChatController(@Qualifier("openAiChatClient") ChatClient ChatClient) {
+        this.openAiChatClient = ChatClient;
     }
 
     @GetMapping("/chat")
     public ResponseEntity<String> sendMessage(@RequestParam("message") String message) {
-        return ResponseEntity.ok(chatClient.prompt(message).call().content());
+        return ResponseEntity.ok(openAiChatClient.prompt(message).call().content());
     }
 }
