@@ -1,6 +1,7 @@
 package com.smartshop.customer.springbootai.config;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.context.annotation.Bean;
@@ -16,13 +17,15 @@ public class ChatClientConfig {
 
     @Bean
     public ChatClient ollamaChatClient(OllamaChatModel model) {
-        ChatClient.Builder chatClientBuilder = ChatClient.builder(model);
+        ChatClient.Builder chatClientBuilder = ChatClient.builder(model)
+                .defaultAdvisors(new SimpleLoggerAdvisor());
         return chatClientBuilder.build();
     }
 
     @Bean
     public ChatClient defaultSystemUserChatClient(OpenAiChatModel model) {
         return ChatClient.builder(model)
+                .defaultAdvisors(new SimpleLoggerAdvisor())
                 .defaultSystem("""
                     You are an HR assistant. ONLY answer questions about HR policies, benefits, leave, payroll, or workplace procedures.
                     
