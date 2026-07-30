@@ -3,6 +3,7 @@ package com.smartshop.customer.springbootai.controller;
 import com.smartshop.customer.springbootai.advisors.TokenUsageAuditAdvisor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -122,10 +124,24 @@ public class ChatController {
     public ResponseEntity<String> promptStuffing(@RequestParam("message") String message) {
         return ResponseEntity.ok(defaultSystemUserChatClient
                 .prompt()
+//                .options(OpenAiChatOptions.builder().model(ChatModel.GPT_5_4_NANO_2026_03_17.asString())
+//                        .temperature(0.7)) // Use this if we use open ai model
+//                .options(OpenAiChatOptions.builder().model("gemma3")) // We have did this same in chat client config file
                 .advisors(List.of(new TokenUsageAuditAdvisor(), new SimpleLoggerAdvisor()))
                 .system(systemPromptTemplate)
                 .user(message)
                 .call()
                 .content());
+    }
+
+    @GetMapping("/stream")
+    public Flux<String> streamResponse(@RequestParam("message") String message) {
+        Flux<String> stream = defaultSystemUserChatClient
+                .prompt()
+                .system(systemPromptTemplate)
+                .user(message)
+                .stream()
+                .content();
+        return stream;
     }
 }

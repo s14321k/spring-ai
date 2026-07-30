@@ -301,4 +301,175 @@ public ChatClient defaultSystemUserChatClient(OpenAiChatModel model, ChatMemory 
 
 This would give you: logged interactions, conversation memory across turns, and answers grounded in actual HR policy documents — instead of relying purely on the system prompt and the small model's own judgment (which, as we saw with your Gemma3 issue, isn't fully reliable on its own).
 
+---
+
+# ChatOptions
+
+## What is ChatOptions?
+
+`ChatOptions` is a configuration object in Spring AI that lets you control how the LLM behaves for a given chat/completion request — model choice, response length, randomness, repetition control, etc. It's essentially the "tuning panel" you pass alongside your prompt.
+
+### Key Options
+
+| Option | Meaning |
+|---|---|
+| `model` | Which LLM to use (e.g., `gpt-4`, `gpt-3.5-turbo`, `gemini-1.5-pro`) |
+| `temperature` | Controls creativity/randomness: `0` = focused & deterministic, `1` (or higher) = more random/creative |
+| `topP` | Nucleus sampling — considers only the smallest set of tokens whose cumulative probability ≥ topP |
+| `topK` | Considers only the top K most probable next tokens |
+| `frequencyPenalty` | Reduces repetition of tokens already used — higher value = less repetition |
+| `presencePenalty` | Encourages the model to bring in new topics/tokens not yet mentioned |
+| `stopSequences` | List of strings — generation stops as soon as one is produced |
+| `maxTokens` | Caps the length of the generated response |
+
+**Interview tip:** `temperature` vs `topP` is a common question — you rarely tune both together. `temperature` reshapes the whole probability distribution; `topP` truncates it to a probability mass. Most people pick one.
+
+### Why it matters — per-request overrides
+
+By default, your `ChatClient`/`ChatModel` bean is configured with default options (usually from `application.yml`). But `ChatOptions` lets you **override these per-call**, which is the real business value — e.g., a summarization endpoint might want low temperature (factual), while a creative-writing endpoint wants high temperature.
+
+**Example (OpenAI, Spring AI)**
+
+```java
+ChatOptions options = OpenAiChatOptions.builder()
+        .model("gpt-4o")
+        .temperature(0.3)
+        .maxTokens(500)
+        .frequencyPenalty(0.5)
+        .presencePenalty(0.2)
+        .stopSequences(List.of("###"))
+        .build();
+
+Prompt prompt = new Prompt("Explain CAP theorem in 3 lines", options);
+
+ChatResponse response = chatModel.call(prompt);
+```
+
+Each `ChatModel` provider (OpenAI, Azure, Vertex, Ollama, Anthropic) has its own `XxxChatOptions` implementation of the `ChatOptions` interface, since not every provider supports every parameter (e.g., not all support `presencePenalty`).
+
+### Quick mental model for interviews
+
+- **`model`** → *what* brain to use
+- **`temperature` / `topP` / `topK`** → *how creative/random* the output is
+- **`frequencyPenalty` / `presencePenalty`** → *how repetitive/diverse* the output is
+- **`maxTokens` / `stopSequences`** → *how long / where to cut off* the output
+
+## ChatOptions vs FunctionCallingOptions
+
+In older Spring AI versions, there was a separate `FunctionCallingOptions` interface (extending `ChatOptions`) specifically to carry function/tool definitions (`functions`, `functionCallbacks`) alongside the usual model params.
+
+In current Spring AI (1.0+), this has been consolidated — tool calling is now handled via `ToolCallingChatOptions` (extends `ChatOptions`), which adds:
+- `toolCallbacks` — the actual tool/function definitions
+- `toolNames` — names of tools to enable for this call
+- `toolContext` — a map of extra context passed to tool execution
+- `internalToolExecutionEnabled` — whether Spring AI auto-executes tools or just returns the tool-call request to you
+
+```java
+ChatOptions options = ToolCallingChatOptions.builder()
+        .model("gpt-4o")
+        .temperature(0.3)
+        .toolCallbacks(List.of(weatherTool, calculatorTool))
+        .internalToolExecutionEnabled(true)
+        .build();
+```
+
+**"PromptOptions"** isn't a real Spring AI class name — you may be thinking of `Prompt` itself, which bundles your messages + `ChatOptions` together:
+
+```java
+Prompt prompt = new Prompt(List.of(userMessage, systemMessage), options);
+```
+
+So the hierarchy is roughly:
+
+```
+ChatOptions (base: model, temperature, maxTokens, topP, topK, stopSequences...)
+    └── ToolCallingChatOptions (adds toolCallbacks, toolNames, toolContext)
+            └── OpenAiChatOptions / AnthropicChatOptions / VertexAiGeminiChatOptions ...
+                    (provider-specific extras, e.g. OpenAI's `seed`, `logitBias`)
+```
+
+## ChatClient.Builder().defaultOptions(...)
+
+This is where you set **defaults at the client level**, so you don't have to repeat options on every call. Per-call options passed via `.options(...)` **override** these defaults for that one request.
+
+```java
+@Bean
+ChatClient chatClient(ChatClient.Builder builder) {
+    return builder
+            .defaultSystem("You are a helpful backend engineering assistant.")
+            .defaultOptions(OpenAiChatOptions.builder()
+                    .model("gpt-4o")
+                    .temperature(0.5)
+                    .maxTokens(1000)
+                    .build())
+            .build();
+}
+```
+
+Usage — normal call uses the defaults:
+
+```java
+String reply = chatClient.prompt()
+        .user("Explain CAP theorem")
+        .call()
+        .content();
+```
+
+Override for one specific call (e.g., you want deterministic output just this once):
+
+```java
+String reply = chatClient.prompt()
+        .user("Generate a strict JSON response")
+        .options(OpenAiChatOptions.builder().temperature(0.0).build())
+        .call()
+        .content();
+```
+
+### Interview one-liner to remember
+
+> `defaultOptions()` = bean-level defaults (set once, applies to every call).
+> `.options()` on a specific `prompt()` call = per-request override (wins over defaults).
+> `ChatOptions` = the base contract; `ToolCallingChatOptions` and provider-specific classes (`OpenAiChatOptions`, `AnthropicChatOptions`, etc.) extend it with capability-specific fields.
+
+# .Context() and others
+
+Here is the complete, unified breakdown of all the terminal methods available in the Spring AI ChatClient fluent API chain. This combines simple execution, structured output mapping, framework metadata, and streaming capabilities into one single source of truth.
+
+------------------------------
+
+## Spring AI ChatClient Terminal Methods Guide
+
+When you invoke .call() (blocking/synchronous execution) or .stream() (reactive/streaming execution) at the end of your ChatClient builder chain, you can finalize the request using one of the following terminal methods.
+
+`.content()` , which only extracts the final raw text string, you can use several other termination methods depending on how you want to receive, process, or parse the AI's response.
+
+## 1. Synchronous Execution Methods (via .call())
+Use these methods when your application needs to wait for the complete response to generate before returning data.
+
+| Terminal Method | What It Returns | Technical Description | Primary Use Case & Example |
+|---|---|---|---|
+| .content() | String | Extracts only the plain text body from the first assistant response choice. | Simple Text Answers: Use this when you only need the plain answer string and do not care about any metadata. String text = client.prompt().user("Hi").call().content(); |
+| .chatResponse() | ChatResponse | Returns the raw AI infrastructure payload containing text choices and provider metrics. | Model Metrics & Token Auditing: Use this to extract background data like token counts or model stop reasons. ChatResponse res = client.prompt().user("Hi").call().chatResponse(); long tokens = res.getMetadata().getUsage().getPromptTokens(); |
+| .entity(Class<T>) | T (Your custom Java Class or Record) | Formats the prompt request to force JSON, then auto-deserializes the JSON text into a typed Java object. | Structured Data & JSON APIs: Use this to automatically convert AI text into a type-safe object without manual parsing. public record HrPolicy(int leaveDays) {} HrPolicy policy = client.prompt().user("Leaves?").call().entity(HrPolicy.class); |
+| .chatClientResponse() | ChatClientResponse | Returns a framework envelope containing both the ChatResponse and the runtime execution context. | Advanced Advisor Frameworks: Use this when building custom advisors, security trackers, or RAG systems to see metadata and context parameters. ChatClientResponse envelope = client.prompt().user("Hi").call().chatClientResponse(); Map<String, Object> context = envelope.context(); |
+
+------------------------------
+## 2. Streaming Execution Methods (via .stream())
+Use these methods when you want the AI to send back tokens piece-by-piece in real-time (like a typing typewriter effect), which is ideal for interactive chat UIs.
+
+| Terminal Method | What It Returns | Technical Description | Primary Use Case & Example |
+|---|---|---|---|
+| .stream().content() | Flux<String> | Emits individual text fragments (chunks) reactively as soon as the model generates them. | Real-time UI Typing: Connects directly to reactive endpoints like Server-Sent Events (SSE) or WebSockets for standard user interfaces. Flux<String> stream = client.prompt().user("Write an essay").stream().content(); |
+| .stream().chatResponse() | Flux<ChatResponse> | Emits continuous stream chunks wrapped inside full metadata containers. | Streaming with Token Monitoring: Use this when your UI needs to render text smoothly while your application monitors real-time cost or token consumption metrics. Flux<ChatResponse> trackingStream = client.prompt().user("Hi").stream().chatResponse(); |
+
+------------------------------
+If you are ready to take your HR application to the next level, let me know if you would like to:
+
+* Implement Structured Outputs: Create an endpoint that converts raw user text into an automated, type-safe Java database record using .entity().
+* Add Live Streaming: Convert your existing promptStuffing endpoint into a non-blocking Flux<String> streaming controller for a lightning-fast typing experience.
+
+
+
+
+
 # RAG - Retrival Augmented Generation
