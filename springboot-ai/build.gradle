@@ -26,7 +26,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 
 //    -------gemini---------This dependency is used to connect with gemini
-//    implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
+    implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
 
 //    -------ollama---------This dependency is used to connect with ollama which is downloaded from ollama website
     implementation 'org.springframework.ai:spring-ai-starter-model-ollama'

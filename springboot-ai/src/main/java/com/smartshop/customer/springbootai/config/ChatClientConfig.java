@@ -2,19 +2,32 @@ package com.smartshop.customer.springbootai.config;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 @Configuration
 public class ChatClientConfig {
 
+    /*
+    * **`chatClient`**: Uses Spring Boot's **Auto-Configuration Builder Pattern**. Spring Boot automatically injects `ChatClient.Builder` (which comes pre-configured with default settings, loggers, and metrics set up by Spring Boot).
+    * **`openAiChatClient`**: Uses **Explicit Direct Instantiation**. It bypasses Spring’s auto-configured builder and manually constructs a `ChatClient` specifically tied to `OpenAiChatModel`.
+    */
 //    @Bean
-//    public ChatClient chatClient(ChatClient.Builder model) {
-//        return model.build();
+//    public ChatClient chatClient(ChatClient.Builder chatClientBuilder) {
+//        return chatClientBuilder.defaultOptions(ChatOptions.builder()).defaultUser("How can I help you").build();
 //    }
+
+    @Bean
+    public ChatClient genAiChatClient(GoogleGenAiChatModel model) {
+        return ChatClient.create(model);
+    }
 
     @Bean
     public ChatClient openAiChatClient(OpenAiChatModel model) {

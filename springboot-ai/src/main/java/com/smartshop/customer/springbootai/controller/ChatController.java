@@ -1,9 +1,9 @@
 package com.smartshop.customer.springbootai.controller;
 
 import com.smartshop.customer.springbootai.advisors.TokenUsageAuditAdvisor;
+import com.smartshop.customer.springbootai.model.CountryCities;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
-import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -33,13 +33,19 @@ public class ChatController {
 //        return ResponseEntity.ok(chatClient.call(message));
 //    }
 
+    private final ChatClient genAiChatClient;
     private final ChatClient openAiChatClient;
-
     private final ChatClient defaultSystemUserChatClient;
 
-    public ChatController(@Qualifier("openAiChatClient") ChatClient ChatClient, @Qualifier("defaultSystemUserChatClient") ChatClient defaultSystemUserChatClient) {
-        this.openAiChatClient = ChatClient;
+    public ChatController(@Qualifier("genAiChatClient") ChatClient genAiChatClient, @Qualifier("openAiChatClient") ChatClient openAiChatClient, @Qualifier("defaultSystemUserChatClient") ChatClient defaultSystemUserChatClient) {
+        this.genAiChatClient = genAiChatClient;
+        this.openAiChatClient = openAiChatClient;
         this.defaultSystemUserChatClient = defaultSystemUserChatClient;
+    }
+
+    @GetMapping("/gemini-chat")
+    public ResponseEntity<String> sendGeminiMessage(@RequestParam("message") String message) {
+        return ResponseEntity.ok(genAiChatClient.prompt(message).call().content());
     }
 
 //    This is moved to ChatClientConfig.java class
@@ -56,7 +62,6 @@ public class ChatController {
 //                .defaultUser("How can you help me?")
 //                .build();
 //    }
-
 
     @GetMapping("/chat")
     public ResponseEntity<String> sendMessage(@RequestParam("message") String message) {
@@ -136,12 +141,22 @@ public class ChatController {
 
     @GetMapping("/stream")
     public Flux<String> streamResponse(@RequestParam("message") String message) {
-        Flux<String> stream = defaultSystemUserChatClient
+        return defaultSystemUserChatClient
                 .prompt()
                 .system(systemPromptTemplate)
                 .user(message)
                 .stream()
                 .content();
-        return stream;
+    }
+
+    @GetMapping("/structured-entity-format")
+    public CountryCities structuredEntityFormat(@RequestParam("message") String message) {
+
+        return openAiChatClient
+                .prompt()
+                .advisors(new SimpleLoggerAdvisor())
+                .user(message)
+                .call()
+                .entity(CountryCities.class);
     }
 }
