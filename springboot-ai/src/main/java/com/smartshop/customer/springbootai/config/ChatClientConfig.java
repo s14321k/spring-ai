@@ -5,6 +5,8 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
 import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -144,6 +146,34 @@ public class ChatClientConfig {
 
         return ChatClient.builder(model)
                 .defaultAdvisors(loggerAdvisor, memoryAdvisor)
+                .build();
+    }
+
+    /**
+     * Creates a {@link ChatMemory} bean that persists conversation history in a
+     * relational database via {@link JdbcChatMemoryRepository}.
+     *
+     * <p>{@link MessageWindowChatMemory} is used here with a {@code maxMessages(10)}
+     * sliding window. This means only the <b>10 most recent</b> messages are kept in
+     * context. Older messages are silently dropped, which:</p>
+     * <ul>
+     *   <li>Keeps token usage predictable and bounded</li>
+     *   <li>Prevents the prompt from growing indefinitely on long conversations</li>
+     *   <li>Reduces cost and latency for each subsequent LLM call</li>
+     * </ul>
+     *
+     * <p>Because the repository is JDBC-backed (not in-memory), conversations are
+     * durable across restarts and shareable between horizontally scaled app instances.</p>
+     *
+     * @param jdbcChatMemoryRepository the JDBC repository that handles CRUD of
+     *                                 chat messages in the underlying SQL database
+     * @return a sliding-window chat memory backed by persistent JDBC storage
+     */
+    @Bean
+    ChatMemory chatMemory(JdbcChatMemoryRepository jdbcChatMemoryRepository) {
+        return MessageWindowChatMemory.builder()
+                .maxMessages(10)
+                .chatMemoryRepository(jdbcChatMemoryRepository)
                 .build();
     }
 }
