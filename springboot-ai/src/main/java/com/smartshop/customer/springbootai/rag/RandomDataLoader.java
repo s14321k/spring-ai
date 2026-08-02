@@ -1,16 +1,21 @@
 package com.smartshop.customer.springbootai.rag;
 
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
 public class RandomDataLoader {
+
+    private static final Logger logger = LoggerFactory.getLogger(RandomDataLoader.class);
+
+
     private final VectorStore vectorStore;
 
     public RandomDataLoader (VectorStore vectorStore) {
@@ -19,6 +24,7 @@ public class RandomDataLoader {
 
     @PostConstruct
     public void loadSentencesIntoVectorStore() {
+        logger.info("loadSentencesIntoVectorStore strings collected");
         List<String> sentences = List.of(
                 "Java is used for building scalable enterprise applications.",
                 "Python is commonly used for machine learning and automation tasks.",

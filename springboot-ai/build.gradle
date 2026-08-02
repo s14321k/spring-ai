@@ -103,7 +103,7 @@ dependencies {
     runtimeOnly 'com.h2database:h2'
     // Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-h2console
     implementation 'org.springframework.boot:spring-boot-h2console:4.0.0-M1'
-    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+//    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
     // ═══════════════════════════════════════════════════════════════════════════════
     // Development & Testing
