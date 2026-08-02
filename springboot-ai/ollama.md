@@ -1,3 +1,5 @@
+# Ollama
+
 I'll help you document the process of installing Ollama and setting up a lightweight LLM locally. Let me first fetch the current information from the Ollama website to ensure accuracy.
 Here's a clear, step-by-step guide to install Ollama and run a lightweight LLM locally on Windows.
 

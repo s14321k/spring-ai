@@ -119,6 +119,16 @@ dependencies {
 
     // JUnit Platform Launcher — required by Gradle to discover and execute JUnit 5 tests.
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+
+    // Add these three resources
+    // Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-docker-compose
+    runtimeOnly 'org.springframework.boot:spring-boot-docker-compose'
+    // Source: https://mvnrepository.com/artifact/org.springframework.ai/spring-ai-rag
+    implementation 'org.springframework.ai:spring-ai-rag'
+    // Source: https://mvnrepository.com/artifact/org.springframework.ai/spring-ai-autoconfigure-vector-store-qdrant
+    implementation 'org.springframework.ai:spring-ai-autoconfigure-vector-store-qdrant'
+//    implementation 'org.springframework.ai:spring-ai-starter-vector-store-qdrant'  // This may produce vector autoconfiguration issue
 }
 
 dependencyManagement {
