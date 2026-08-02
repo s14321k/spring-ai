@@ -1,0 +1,1 @@
+go to docker desktop → model → Docker hub → search → mxbai-embed-large

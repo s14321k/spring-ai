@@ -176,5 +176,4 @@ public class ChatClientConfig {
                 .chatMemoryRepository(jdbcChatMemoryRepository)
                 .build();
     }
-
 }

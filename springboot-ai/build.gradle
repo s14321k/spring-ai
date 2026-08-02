@@ -127,8 +127,8 @@ dependencies {
     // Source: https://mvnrepository.com/artifact/org.springframework.ai/spring-ai-rag
     implementation 'org.springframework.ai:spring-ai-rag'
     // Source: https://mvnrepository.com/artifact/org.springframework.ai/spring-ai-autoconfigure-vector-store-qdrant
-    implementation 'org.springframework.ai:spring-ai-autoconfigure-vector-store-qdrant'
-//    implementation 'org.springframework.ai:spring-ai-starter-vector-store-qdrant'  // This may produce vector autoconfiguration issue
+//    implementation 'org.springframework.ai:spring-ai-autoconfigure-vector-store-qdrant'
+    implementation 'org.springframework.ai:spring-ai-starter-vector-store-qdrant'  // This may produce vector autoconfiguration issue
 }
 
 dependencyManagement {
