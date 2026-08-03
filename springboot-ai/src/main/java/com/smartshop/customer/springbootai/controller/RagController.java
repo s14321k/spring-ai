@@ -1,5 +1,6 @@
 package com.smartshop.customer.springbootai.controller;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
@@ -19,13 +20,13 @@ public class RagController {
     private final ChatClient chatMemoryClient;
     private final VectorStore vectorStore;
 
-    @Value("classpath:/promtTemplates/systemPromptRandomDataTemplate.st")
-    private Resource systemPromptRandomDataTemplate;
-
     public RagController(ChatClient chatMemoryClient, VectorStore vectorStore) {
         this.chatMemoryClient = chatMemoryClient;
         this.vectorStore = vectorStore;
     }
+
+    @Value("classpath:/promtTemplates/systemPromptRandomDataTemplate.st")
+    private Resource systemPromptRandomDataTemplate;
 
     /**
      * Handles GET requests to "/random-chat" to provide AI-generated responses
@@ -44,10 +45,27 @@ public class RagController {
      * @param message  the user's input message passed as a query parameter
      * @return the AI-generated chat response
      */
-    @GetMapping("/random-chat")                                    // Maps HTTP GET requests to "/random-chat" endpoint
+    @GetMapping("/random-chat")                                        // Maps HTTP GET requests to "/random-chat" endpoint
     public String randomChat(@RequestHeader("username") String username,  // Extracts "username" value from request headers
                              @RequestParam("message") String message) {   // Extracts "message" value from query parameters
 
+        return getString(username, message, systemPromptRandomDataTemplate);
+    }
+
+    @Value("classpath:/promtTemplates/hrSystemPromptTemplatePdf.st")
+    private Resource hrSystemPromptTemplatePdf;
+
+    @GetMapping("/document-chat")                                       // Maps HTTP GET requests to "/random-chat" endpoint
+    public String documentChat(@RequestHeader("username") String username,  // Extracts "username" value from request headers
+                             @RequestParam("message") String message) {   // Extracts "message" value from query parameters
+
+        return getString(username, message, hrSystemPromptTemplatePdf);
+    }
+
+    @Nullable
+    private String getString(String username,
+                             String message,
+                             Resource systemPromptTemplate) {
         SearchRequest searchRequest = SearchRequest.builder()     // Starts building a search request object
                 .query(message)                                     // Sets the search query to the user's message
                 .topK(3)                                            // Limits results to top 3 most similar documents
@@ -62,7 +80,7 @@ public class RagController {
 
         return chatMemoryClient.prompt()                            // Begins building an AI prompt request
                 .system(                                            // Configures the system-level instructions
-                        promptSystemSpec -> promptSystemSpec.text(systemPromptRandomDataTemplate)  // Uses predefined system prompt template
+                        promptSystemSpec -> promptSystemSpec.text(systemPromptTemplate)  // Uses predefined system prompt template
                                 .param("documents", similarContext)) // Injects the found documents into the template placeholder
                 .advisors(a -> a.param(CONVERSATION_ID, username))  // Tags conversation with username for memory tracking
                 .user(message)                                     // Sets the user input message

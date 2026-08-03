@@ -1,5 +1,6 @@
 package com.smartshop.customer.springbootai.config;
 
+import com.smartshop.customer.springbootai.advisors.TokenUsageAuditAdvisor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
@@ -142,10 +143,11 @@ public class ChatClientConfig {
     @Bean
     public ChatClient chatMemoryClient(OpenAiChatModel model, ChatMemory chatMemory) {
         Advisor loggerAdvisor = new SimpleLoggerAdvisor();
+        Advisor tokenUsageAdvisor = new TokenUsageAuditAdvisor();
         Advisor memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
 
         return ChatClient.builder(model)
-                .defaultAdvisors(loggerAdvisor, memoryAdvisor)
+                .defaultAdvisors(loggerAdvisor, memoryAdvisor, tokenUsageAdvisor)
                 .build();
     }
 

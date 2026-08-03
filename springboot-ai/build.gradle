@@ -129,6 +129,10 @@ dependencies {
     // Source: https://mvnrepository.com/artifact/org.springframework.ai/spring-ai-autoconfigure-vector-store-qdrant
 //    implementation 'org.springframework.ai:spring-ai-autoconfigure-vector-store-qdrant'
     implementation 'org.springframework.ai:spring-ai-starter-vector-store-qdrant'  // This may produce vector autoconfiguration issue
+
+    // Tika for PDF reading
+    // Source: https://mvnrepository.com/artifact/org.springframework.ai/spring-ai-tika-document-reader
+    implementation 'org.springframework.ai:spring-ai-tika-document-reader'
 }
 
 dependencyManagement {
