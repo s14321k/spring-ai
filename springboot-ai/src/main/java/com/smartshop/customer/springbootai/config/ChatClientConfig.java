@@ -12,6 +12,9 @@ import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
+import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -123,31 +126,39 @@ public class ChatClientConfig {
     }
 
     /**
-     * Creates a <b>stateful</b> {@link ChatClient} with conversation memory.
+     * Creates a <b>stateful</b> {@link ChatClient} configured with conversation
+     * memory, retrieval-augmented generation (RAG), logging, and token usage auditing.
      *
-     * <p>Attaches two default advisors:</p>
+     * <p>The client is configured with the following advisors:</p>
      * <ul>
-     *   <li>{@link SimpleLoggerAdvisor} — logs every request and response</li>
-     *   <li>{@link MessageChatMemoryAdvisor} — persists and replays conversation history
-     *       so the model retains context across multiple turns</li>
+     *   <li>{@link SimpleLoggerAdvisor} — logs every request and response.</li>
+     *   <li>{@link MessageChatMemoryAdvisor} — persists and replays conversation
+     *       history so the model retains context across multiple turns.</li>
+     *   <li>{@link TokenUsageAuditAdvisor} — records token consumption for each request.</li>
+     *   <li>{@link RetrievalAugmentationAdvisor} — automatically retrieves relevant
+     *       documents from the configured {@link VectorStore} and injects them into
+     *       the prompt before it is sent to the model.</li>
      * </ul>
      *
-     * <p>The {@link ChatMemory} (usually an {@code InMemoryChatMemoryRepository} bean)
-     * is keyed by {@code CONVERSATION_ID}, allowing multiple isolated conversations.
-     * Use this client when you need multi-turn dialogue rather than single-shot Q&A.</p>
+     * <p>The {@link ChatMemory} stores conversation history using the configured
+     * {@code ChatMemoryRepository}. Conversations are isolated using the
+     * {@code CONVERSATION_ID} advisor parameter supplied at runtime.</p>
      *
-     * @param model      the {@link OpenAiChatModel} to route requests through
-     * @param chatMemory the memory store that holds past messages per conversation
-     * @return a chat client capable of remembering conversation context
+     * @param model the {@link OpenAiChatModel} used to generate responses
+     * @param chatMemory the conversation memory implementation
+     * @param retrievalAugmentationAdvisor the advisor that performs automatic
+     *        retrieval of relevant documents for Retrieval-Augmented Generation (RAG)
+     * @return a configured {@link ChatClient} supporting conversational memory,
+     *         automatic document retrieval, request logging, and token auditing
      */
     @Bean
-    public ChatClient chatMemoryClient(OpenAiChatModel model, ChatMemory chatMemory) {
+    public ChatClient chatMemoryClient(OpenAiChatModel model, ChatMemory chatMemory, RetrievalAugmentationAdvisor retrievalAugmentationAdvisor) {
         Advisor loggerAdvisor = new SimpleLoggerAdvisor();
         Advisor tokenUsageAdvisor = new TokenUsageAuditAdvisor();
         Advisor memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
 
         return ChatClient.builder(model)
-                .defaultAdvisors(loggerAdvisor, memoryAdvisor, tokenUsageAdvisor)
+                .defaultAdvisors(loggerAdvisor, memoryAdvisor, tokenUsageAdvisor, retrievalAugmentationAdvisor)
                 .build();
     }
 
@@ -177,5 +188,35 @@ public class ChatClientConfig {
                 .maxMessages(10)
                 .chatMemoryRepository(jdbcChatMemoryRepository)
                 .build();
+    }
+
+    /**
+     * Creates the {@link RetrievalAugmentationAdvisor} used for Retrieval-Augmented
+     * Generation (RAG).
+     *
+     * <p>The advisor automatically performs a similarity search against the configured
+     * {@link VectorStore} for every user prompt before it is sent to the AI model.
+     * The retrieved documents are then injected into the prompt as additional context,
+     * eliminating the need for manual VectorStore searches in application code.
+     *
+     * <p>Retriever configuration:
+     * <ul>
+     *     <li><b>topK = 3</b> - Retrieves up to three most relevant documents.</li>
+     *     <li><b>similarityThreshold = 0.5</b> - Ignores documents with similarity
+     *     scores below 50%.</li>
+     * </ul>
+     *
+     * @param vectorStore the vector database used to retrieve semantically similar documents
+     * @return a configured {@link RetrievalAugmentationAdvisor} for automatic RAG
+     */
+    @Bean
+    RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(VectorStore vectorStore) {
+        return RetrievalAugmentationAdvisor.builder().documentRetriever(
+                VectorStoreDocumentRetriever.builder()
+                        .vectorStore(vectorStore)
+                        .topK(3)
+                        .similarityThreshold(0.5)
+                        .build()
+        ).build();
     }
 }
