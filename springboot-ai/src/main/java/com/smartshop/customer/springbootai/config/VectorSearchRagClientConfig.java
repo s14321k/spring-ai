@@ -10,6 +10,7 @@ import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
+import org.springframework.ai.rag.preretrieval.query.transformation.TranslationQueryTransformer;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
@@ -102,14 +103,21 @@ public class VectorSearchRagClientConfig {
      * @param vectorStore the vector database used to retrieve semantically similar documents
      * @return a configured {@link RetrievalAugmentationAdvisor} for automatic RAG
      */
-    @Bean
-    RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(VectorStore vectorStore) {
-        return RetrievalAugmentationAdvisor.builder().documentRetriever(
-                VectorStoreDocumentRetriever.builder()
-                        .vectorStore(vectorStore)
-                        .topK(3)
-                        .similarityThreshold(0.5)
-                        .build()
-        ).build();
+    @Bean                                                          // Exposes this advisor as a Spring bean
+    RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(VectorStore vectorStore, OpenAiChatModel model) {  // Injects vector DB and chat client builder
+        return RetrievalAugmentationAdvisor.builder()               // Starts building the RAG advisor
+                .queryTransformers(TranslationQueryTransformer.builder()  // Adds a query translation step
+//                        .chatClientBuilder(ChatClient.builder(model))  // Both bottom and this are same
+                        .chatClientBuilder(ChatClient.create(model).mutate())     // Uses a cloned chat client for translation
+                        .targetLanguage("en")                       // Translates all queries to English before searching
+                        .build())                                   // Finishes the transformer setup
+                .documentRetriever(                                 // Configures where to fetch documents from
+                        VectorStoreDocumentRetriever.builder()          // Uses vector store as the document source
+                                .vectorStore(vectorStore)               // Sets the injected vector database
+                                .topK(3)                                // Fetches top 3 most similar documents
+                                .similarityThreshold(0.5)               // Ignores matches below 50% similarity
+                                .build()                                // Finishes the retriever setup
+                )
+                .build();                                           // Creates the final RAG advisor
     }
 }
