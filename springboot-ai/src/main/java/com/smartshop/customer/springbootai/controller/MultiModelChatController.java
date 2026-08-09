@@ -14,7 +14,7 @@ public class MultiModelChatController {
     private final ChatClient openAiChatClient;
     private final ChatClient ollamaChatClient;
 
-    MultiModelChatController(@Qualifier("openAiChatClient") ChatClient openAiChatClient, @Qualifier("ollamaChatClient") ChatClient ollamaChatClient) {
+    MultiModelChatController(@Qualifier("gemmaOpenAiChatClient") ChatClient openAiChatClient, @Qualifier("ollamaChatClient") ChatClient ollamaChatClient) {
         this.openAiChatClient = openAiChatClient;
         this.ollamaChatClient = ollamaChatClient;
     }

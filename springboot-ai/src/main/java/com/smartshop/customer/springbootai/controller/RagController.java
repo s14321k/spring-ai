@@ -2,16 +2,11 @@ package com.smartshop.customer.springbootai.controller;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
-import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.springframework.ai.chat.memory.ChatMemory.CONVERSATION_ID;
 
@@ -19,11 +14,22 @@ import static org.springframework.ai.chat.memory.ChatMemory.CONVERSATION_ID;
 @RequestMapping("/rag-api")
 public class RagController {
     private final ChatClient chatMemoryClient;
+
+    /**
+     * Retained only as a reference for the former manual RAG path (see commented code in
+     * {@link #getString}). Document retrieval is now automatic via
+     * {@code RetrievalAugmentationAdvisor} registered on {@code chatMemoryClient} in
+     * {@code ChatClientConfig} — controllers no longer call {@link VectorStore} directly.
+     */
+    @SuppressWarnings("unused")
     private final VectorStore vectorStore;
 
-    public RagController(ChatClient chatMemoryClient, VectorStore vectorStore) {
+    private final ChatClient webSearchRAGChatClient;
+
+    public RagController(ChatClient chatMemoryClient, VectorStore vectorStore, ChatClient webSearchRAGChatClient) {
         this.chatMemoryClient = chatMemoryClient;
         this.vectorStore = vectorStore;
+        this.webSearchRAGChatClient = webSearchRAGChatClient;
     }
 
     @Value("classpath:/promtTemplates/systemPromptRandomDataTemplate.st")
@@ -84,6 +90,22 @@ public class RagController {
     private String getString(String username,
                              String message,
                              Resource systemPromptTemplate) {
+        // -------------------------------------------------------------------------
+        // COMMENTED OUT — replaced by ChatClientConfig.retrievalAugmentationAdvisor
+        // -------------------------------------------------------------------------
+        // Before: this controller manually built a VectorStore SearchRequest, ran
+        // similaritySearch, joined document text, and injected it into a system
+        // prompt template via .system(...).param("documents", similarContext).
+        //
+        // After: chatMemoryClient is built in ChatClientConfig with a default
+        // RetrievalAugmentationAdvisor that uses VectorStoreDocumentRetriever
+        // (topK=3, similarityThreshold=0.5). On every .call(), the advisor:
+        //   1) searches the VectorStore with the user message
+        //   2) injects matching documents into the prompt automatically
+        // So the manual search + context join + .system(documents=...) below is
+        // redundant and would double-retrieve / double-inject context if enabled.
+        // Keep this block as a learning reference for the pre-advisor RAG style.
+        // -------------------------------------------------------------------------
 //        SearchRequest searchRequest = SearchRequest.builder()       // Starts building a search request object
 //                .query(message)                                     // Sets the search query to the user's message
 //                .topK(3)                                            // Limits results to top 3 most similar documents
@@ -97,6 +119,13 @@ public class RagController {
 //                .collect(Collectors.joining(System.lineSeparator())); // Joins all texts with new lines into one string
 
         return chatMemoryClient.prompt()                            // Begins building an AI prompt request
+                // COMMENTED OUT — same reason as above: document context is no longer
+                // passed through a system prompt template. RetrievalAugmentationAdvisor
+                // on chatMemoryClient (ChatClientConfig) supplies RAG context.
+                // systemPromptTemplate is still injected into this method for the
+                // random-chat / document-chat endpoints as a historical parameter;
+                // re-enable .system(...) only if you need custom template wording
+                // *in addition to* (or instead of) the advisor-based RAG path.
                 /*.system(                                            // Configures the system-level instructions
                         promptSystemSpec -> promptSystemSpec.text(systemPromptTemplate)  // Uses predefined system prompt template
                                 .param("documents", similarContext))*/ // Injects the found documents into the template placeholder
@@ -104,5 +133,17 @@ public class RagController {
                 .user(message)                                      // Sets the user input message
                 .call()                                             // Sends the prompt to the AI model
                 .content();                                         // Returns only the text content of the AI response
+    }
+
+    @GetMapping("/web-search")
+    public String webSearchChat(@RequestHeader("username") String username,
+                                 @RequestParam("message") String message
+                             ) {
+        String answer = webSearchRAGChatClient.prompt()
+                .advisors(a -> a.param(CONVERSATION_ID, username))
+                .user(message)
+                .call()
+                .content();
+        return answer;
     }
 }

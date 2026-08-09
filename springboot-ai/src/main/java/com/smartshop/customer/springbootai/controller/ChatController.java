@@ -40,7 +40,7 @@ public class ChatController {
     private final ChatClient defaultSystemUserChatClient;
     private final ChatClient chatMemoryClient;
 
-    public ChatController(@Qualifier("genAiChatClient") ChatClient genAiChatClient, @Qualifier("openAiChatClient") ChatClient openAiChatClient,
+    public ChatController(@Qualifier("genAiChatClient") ChatClient genAiChatClient, @Qualifier("gemmaOpenAiChatClient") ChatClient openAiChatClient,
                           @Qualifier("defaultSystemUserChatClient") ChatClient defaultSystemUserChatClient, @Qualifier("chatMemoryClient") ChatClient chatMemoryClient) {
         this.genAiChatClient = genAiChatClient;
         this.openAiChatClient = openAiChatClient;

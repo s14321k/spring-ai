@@ -133,6 +133,9 @@ dependencies {
     // Tika for PDF reading
     // Source: https://mvnrepository.com/artifact/org.springframework.ai/spring-ai-tika-document-reader
     implementation 'org.springframework.ai:spring-ai-tika-document-reader'
+
+    // Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-restclient
+    implementation 'org.springframework.boot:spring-boot-restclient'
 }
 
 dependencyManagement {
