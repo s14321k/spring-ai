@@ -1,6 +1,7 @@
 package com.smartshop.customer.springbootai.config;
 
 import com.smartshop.customer.springbootai.advisors.TokenUsageAuditAdvisor;
+import com.smartshop.customer.springbootai.rag.PIIMaskingDocumentPostProcessor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
@@ -93,6 +94,14 @@ public class VectorSearchRagClientConfig {
      * The retrieved documents are then injected into the prompt as additional context,
      * eliminating the need for manual VectorStore searches in application code.
      *
+     * <p>Additional features:
+     * <ul>
+     *     <li><b>Query Translation</b> - Automatically translates non-English user
+     *     queries to English before vector search.</li>
+     *     <li><b>PII Masking</b> - Redacts personally identifiable information from
+     *     retrieved documents before they are sent to the AI model.</li>
+     * </ul>
+     *
      * <p>Retriever configuration:
      * <ul>
      *     <li><b>topK = 3</b> - Retrieves up to three most relevant documents.</li>
@@ -101,14 +110,16 @@ public class VectorSearchRagClientConfig {
      * </ul>
      *
      * @param vectorStore the vector database used to retrieve semantically similar documents
+     * @param model       the OpenAI chat model used to power the translation transformer
      * @return a configured {@link RetrievalAugmentationAdvisor} for automatic RAG
      */
     @Bean                                                          // Exposes this advisor as a Spring bean
-    RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(VectorStore vectorStore, OpenAiChatModel model) {  // Injects vector DB and chat client builder
+    RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(VectorStore vectorStore, OpenAiChatModel model) {  // Injects vector DB and OpenAI model
         return RetrievalAugmentationAdvisor.builder()               // Starts building the RAG advisor
+                // Pre-processing / Pre-Retrieval
                 .queryTransformers(TranslationQueryTransformer.builder()  // Adds a query translation step
 //                        .chatClientBuilder(ChatClient.builder(model))  // Both bottom and this are same
-                        .chatClientBuilder(ChatClient.create(model).mutate())     // Uses a cloned chat client for translation
+                        .chatClientBuilder(ChatClient.create(model).mutate())     // Creates a mutable chat client from the model
                         .targetLanguage("en")                       // Translates all queries to English before searching
                         .build())                                   // Finishes the transformer setup
                 .documentRetriever(                                 // Configures where to fetch documents from
@@ -118,6 +129,8 @@ public class VectorSearchRagClientConfig {
                                 .similarityThreshold(0.5)               // Ignores matches below 50% similarity
                                 .build()                                // Finishes the retriever setup
                 )
+                // Post-processing / Post-Retrieval
+                .documentPostProcessors(PIIMaskingDocumentPostProcessor.builder()) // Masks PII (e.g., emails, phone numbers) in retrieved docs
                 .build();                                           // Creates the final RAG advisor
     }
 }
