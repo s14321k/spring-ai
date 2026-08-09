@@ -15,6 +15,18 @@ import java.util.List;
 
 public class GoogleWebSearchDocumentRetriever implements DocumentRetriever {
 
+    // Create search engine
+    // https://programmablesearchengine.google.com/controlpanel/all
+
+    // https://console.cloud.google.com/apis/dashboard?
+    // then go to credentials
+    // https://console.cloud.google.com/apis/credentials?
+    // Create credentials -> Api Key -> select API restrictions (Custom API key) -> create
+
+    /*Google has closed the Google Custom Search JSON API to new projects/customers.
+    Even if you enable the API in the Google Cloud Console and generate an API key,
+    Google blocks new sign-ups from making API calls through this service.*/
+
     private static final Logger logger = LoggerFactory.getLogger(GoogleWebSearchDocumentRetriever.class);
 
     private static final String API_KEY_ENV = "GOOGLE_SEARCH_API_KEY";
