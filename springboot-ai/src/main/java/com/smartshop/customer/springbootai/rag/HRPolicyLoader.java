@@ -39,7 +39,7 @@ public class HRPolicyLoader {
         // the embedding model's physical batch size (512 tokens on the
         // local Docker Model Runner instance).
         TokenTextSplitter splitter = TokenTextSplitter.builder()        // Starts building the text splitter
-                .withChunkSize(100)                                     // Target ~300 tokens per chunk (stays under model limits)
+                .withChunkSize(300)                                     // Target ~300 tokens per chunk (stays under model limits)
                 .withMinChunkSizeChars(100)                             // Drops chunks smaller than 100 characters
                 .withMinChunkLengthToEmbed(5)                           // Ignores chunks shorter than 5 tokens for embedding
                 .withMaxNumChunks(400)                                // Hard cap: stops after 10,000 chunks
