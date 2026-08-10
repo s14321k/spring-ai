@@ -136,6 +136,9 @@ dependencies {
 
     // Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-restclient
     implementation 'org.springframework.boot:spring-boot-restclient'
+
+    // Source: https://mvnrepository.com/artifact/org.springframework.ai/spring-ai-redis-semantic-cache
+    implementation 'org.springframework.ai:spring-ai-redis-semantic-cache'
 }
 
 dependencyManagement {
