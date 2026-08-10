@@ -2,6 +2,7 @@ package com.smartshop.customer.springbootai.config;
 
 import com.smartshop.customer.springbootai.advisors.TokenUsageAuditAdvisor;
 import com.smartshop.customer.springbootai.rag.PIIMaskingDocumentPostProcessor;
+import org.springframework.ai.chat.cache.semantic.SemanticCacheAdvisor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
@@ -47,13 +48,15 @@ public class VectorSearchRagClientConfig {
      *         automatic document retrieval, request logging, and token auditing
      */
     @Bean
-    public ChatClient chatMemoryClient(OpenAiChatModel model, ChatMemory chatMemory, RetrievalAugmentationAdvisor retrievalAugmentationAdvisor) {
+    public ChatClient chatMemoryClient(OpenAiChatModel model, ChatMemory chatMemory,
+                                       RetrievalAugmentationAdvisor retrievalAugmentationAdvisor,
+                                       SemanticCacheAdvisor  semanticCacheAdvisor) {
         Advisor loggerAdvisor = new SimpleLoggerAdvisor();
         Advisor tokenUsageAdvisor = new TokenUsageAuditAdvisor();
         Advisor memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
 
         return ChatClient.builder(model)
-                .defaultAdvisors(loggerAdvisor, memoryAdvisor, tokenUsageAdvisor, retrievalAugmentationAdvisor)
+                .defaultAdvisors(loggerAdvisor, memoryAdvisor, tokenUsageAdvisor, retrievalAugmentationAdvisor, semanticCacheAdvisor)
                 .build();
     }
 
@@ -114,7 +117,7 @@ public class VectorSearchRagClientConfig {
      * @return a configured {@link RetrievalAugmentationAdvisor} for automatic RAG
      */
     @Bean                                                          // Exposes this advisor as a Spring bean
-    RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(VectorStore vectorStore, OpenAiChatModel model) {  // Injects vector DB and OpenAI model
+    RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(OpenAiChatModel model, VectorStore vectorStore) {  // Injects vector DB and OpenAI model
         return RetrievalAugmentationAdvisor.builder()               // Starts building the RAG advisor
                 // Pre-processing / Pre-Retrieval
                 .queryTransformers(TranslationQueryTransformer.builder()  // Adds a query translation step
