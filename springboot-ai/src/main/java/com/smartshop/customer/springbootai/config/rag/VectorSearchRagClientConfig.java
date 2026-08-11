@@ -1,4 +1,4 @@
-package com.smartshop.customer.springbootai.config;
+package com.smartshop.customer.springbootai.config.rag;
 
 import com.smartshop.customer.springbootai.advisors.TokenUsageAuditAdvisor;
 import com.smartshop.customer.springbootai.rag.PIIMaskingDocumentPostProcessor;
@@ -50,13 +50,13 @@ public class VectorSearchRagClientConfig {
     @Bean
     public ChatClient chatMemoryClient(OpenAiChatModel model, ChatMemory chatMemory,
                                        RetrievalAugmentationAdvisor retrievalAugmentationAdvisor,
-                                       SemanticCacheAdvisor  semanticCacheAdvisor) {
+                                       SemanticCacheAdvisor  redisSemanticCacheAdvisor) {
         Advisor loggerAdvisor = new SimpleLoggerAdvisor();
         Advisor tokenUsageAdvisor = new TokenUsageAuditAdvisor();
         Advisor memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
 
         return ChatClient.builder(model)
-                .defaultAdvisors(loggerAdvisor, memoryAdvisor, tokenUsageAdvisor, retrievalAugmentationAdvisor, semanticCacheAdvisor)
+                .defaultAdvisors(loggerAdvisor, memoryAdvisor, tokenUsageAdvisor, retrievalAugmentationAdvisor, redisSemanticCacheAdvisor)
                 .build();
     }
 

@@ -1,4 +1,4 @@
-package com.smartshop.customer.springbootai.config;
+package com.smartshop.customer.springbootai.config.cache;
 
 import org.springframework.ai.chat.cache.semantic.SemanticCache;
 import org.springframework.ai.chat.cache.semantic.SemanticCacheAdvisor;
@@ -19,7 +19,7 @@ import redis.clients.jedis.RedisClient;
  * </p>
  */
 @Configuration
-public class SemanticRedisCacheConfig {
+public class RedisSemanticCacheConfig {
 
     /**
      * Creates and configures a {@link RedisClient} bean for connecting
@@ -55,24 +55,19 @@ public class SemanticRedisCacheConfig {
      * @return a configured {@link SemanticCache} instance
      */
     @Bean
-    public SemanticCache semanticCache(RedisClient redisClient, EmbeddingModel embeddingModel) {
+    public SemanticCache redisSemanticCache(RedisClient redisClient, EmbeddingModel embeddingModel) {
         return DefaultSemanticCache.builder()
-                // Redis client for storing embeddings and cache entries
-                .jedisClient(redisClient)
-                // Embedding model to convert text queries into vector representations
-                .embeddingModel(embeddingModel)
-                // Minimum cosine similarity (0.0–1.0) required for a cache hit;
-                // 0.8 ensures only highly semantically similar queries match
-                .similarityThreshold(0.9)
-                // Name of the Redis Search index used for vector similarity queries
-                .indexName("sarath-spring-ai-semantic-cache")
-                // Key prefix applied to all cache entries for namespace isolation
-                .prefix("cache: ")
+                .jedisClient(redisClient)  // Redis client for storing embeddings and cache entries
+                .embeddingModel(embeddingModel)  // Embedding model to convert text queries into vector representations
+                .similarityThreshold(0.7)   // Minimum cosine similarity (0.0–1.0) required for a cache hit;
+                                            // 0.8 ensures only highly semantically similar queries match
+                .indexName("sarath-spring-ai-semantic-cache")   // Name of the Redis Search index used for vector similarity queries
+                .prefix("cache: ")  // Key prefix applied to all cache entries for namespace isolation
                 .build();
     }
 
     @Bean
-    public SemanticCacheAdvisor semanticCacheAdvisor(SemanticCache semanticCache) {
-        return SemanticCacheAdvisor.builder().cache(semanticCache).build();
+    public SemanticCacheAdvisor redisSemanticCacheAdvisor(SemanticCache redisSemanticCache) {
+        return SemanticCacheAdvisor.builder().cache(redisSemanticCache).build();
     }
 }

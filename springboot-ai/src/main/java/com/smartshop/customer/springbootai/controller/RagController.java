@@ -90,6 +90,7 @@ public class RagController {
     private String getString(String username,
                              String message,
                              Resource systemPromptTemplate) {
+
         // -------------------------------------------------------------------------
         // COMMENTED OUT — replaced by ChatClientConfig.retrievalAugmentationAdvisor
         // -------------------------------------------------------------------------
@@ -139,11 +140,10 @@ public class RagController {
     public String webSearchChat(@RequestHeader("username") String username,
                                  @RequestParam("message") String message
                              ) {
-        String answer = webSearchRAGChatClient.prompt()
+        return webSearchRAGChatClient.prompt()
                 .advisors(a -> a.param(CONVERSATION_ID, username))
                 .user(message)
                 .call()
                 .content();
-        return answer;
     }
 }

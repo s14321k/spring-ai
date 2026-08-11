@@ -1,6 +1,7 @@
-package com.smartshop.customer.springbootai.config;
+package com.smartshop.customer.springbootai.config.rag;
 
 import com.smartshop.customer.springbootai.advisors.TokenUsageAuditAdvisor;
+import com.smartshop.customer.springbootai.config.SystemUserChatClientConfig;
 import com.smartshop.customer.springbootai.rag.SerperWebDocumentRetriever;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
