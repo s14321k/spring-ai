@@ -23,6 +23,7 @@ public class VectorSearchRagClientConfig {
 
     /* ── Shared infrastructure ── */
 
+    /** No LLM — persists chat history in H2 ({@code spring.datasource.url}). */
     @Bean
     ChatMemory chatMemory(JdbcChatMemoryRepository jdbcChatMemoryRepository) {
         return MessageWindowChatMemory.builder()
@@ -33,6 +34,15 @@ public class VectorSearchRagClientConfig {
 
     /* ── Advisor 1: General RAG (loose retrieval, 3 docs, 0.5 threshold) ── */
 
+    /**
+     * LLM backend: <b>Gemma (local Docker)</b> — {@link TranslationQueryTransformer} uses
+     * {@link OpenAiChatModel} at {@code spring.ai.openai.chat.base-url}
+     * ({@code ${IP_ADDRESS}:12434/engines/v1}), not OpenAI cloud.
+     *
+     * <p>RAG documents come from {@link VectorStoreDocumentRetriever} (Qdrant at
+     * {@code localhost:6334}, collection {@code sarath-spring-ai}). Similarity search uses
+     * Docker embeddings ({@code ai/mxbai-embed-large}) — not an LLM.</p>
+     */
     @Bean
     public RetrievalAugmentationAdvisor generalRetrievalAdvisor(OpenAiChatModel model, VectorStore vectorStore) {
         return RetrievalAugmentationAdvisor.builder()
@@ -51,6 +61,13 @@ public class VectorSearchRagClientConfig {
                 .build();
     }
 
+    /**
+     * LLM backend: <b>Gemma (local Docker)</b> — {@link OpenAiChatModel} generates the final
+     * answer at {@code spring.ai.openai.chat.base-url} ({@code ${IP_ADDRESS}:12434/engines/v1}).
+     *
+     * <p>RAG context is fetched by {@code generalRetrievalAdvisor} (Qdrant + Docker embeddings).
+     * {@link SemanticCacheAdvisor} checks Redis cache first — cache hits skip Gemma entirely.</p>
+     */
     @Bean
     public ChatClient vectorGeneralRAGChatClient(
             OpenAiChatModel model,
@@ -71,6 +88,15 @@ public class VectorSearchRagClientConfig {
 
     /* ── Advisor 2: HR RAG (stricter retrieval, 5 docs, 0.7 threshold) ── */
 
+    /**
+     * LLM backend: <b>Gemma (local Docker)</b> — {@link TranslationQueryTransformer} uses
+     * {@link OpenAiChatModel} at {@code spring.ai.openai.chat.base-url}
+     * ({@code ${IP_ADDRESS}:12434/engines/v1}), not OpenAI cloud.
+     *
+     * <p>RAG documents come from {@link VectorStoreDocumentRetriever} (Qdrant at
+     * {@code localhost:6334}, stricter threshold 0.7, topK 5). Similarity search uses
+     * Docker embeddings ({@code ai/mxbai-embed-large}) — not an LLM.</p>
+     */
     @Bean
     public RetrievalAugmentationAdvisor hrRetrievalAdvisor(OpenAiChatModel model, VectorStore vectorStore) {
         return RetrievalAugmentationAdvisor.builder()
@@ -89,6 +115,13 @@ public class VectorSearchRagClientConfig {
                 .build();
     }
 
+    /**
+     * LLM backend: <b>Gemma (local Docker)</b> — {@link OpenAiChatModel} generates the final
+     * answer at {@code spring.ai.openai.chat.base-url} ({@code ${IP_ADDRESS}:12434/engines/v1}).
+     *
+     * <p>RAG context is fetched by {@code hrRetrievalAdvisor} (Qdrant + Docker embeddings).
+     * {@link SemanticCacheAdvisor} checks Redis cache first — cache hits skip Gemma entirely.</p>
+     */
     @Bean
     public ChatClient vectorHrRAGChatClient(
             OpenAiChatModel model,
@@ -109,6 +142,13 @@ public class VectorSearchRagClientConfig {
 
     /* ── Plain client for MANUAL RAG (NO retrieval advisor → no double-fetch) ── */
 
+    /**
+     * LLM backend: <b>Gemma (local Docker)</b> — {@link OpenAiChatModel} at
+     * {@code spring.ai.openai.chat.base-url} ({@code ${IP_ADDRESS}:12434/engines/v1}).
+     *
+     * <p>No retrieval advisor — caller supplies RAG context manually. Redis semantic cache
+     * may return a cached answer without calling Gemma.</p>
+     */
     @Bean
     public ChatClient vectorManualChatClient(
             OpenAiChatModel model,

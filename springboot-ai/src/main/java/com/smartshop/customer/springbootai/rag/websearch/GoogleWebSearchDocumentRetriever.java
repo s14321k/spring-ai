@@ -1,4 +1,4 @@
-package com.smartshop.customer.springbootai.rag;
+package com.smartshop.customer.springbootai.rag.websearch;
 
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;

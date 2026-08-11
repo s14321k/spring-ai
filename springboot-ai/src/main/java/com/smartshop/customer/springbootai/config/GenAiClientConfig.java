@@ -9,13 +9,12 @@ import org.springframework.context.annotation.Configuration;
 public class GenAiClientConfig {
 
     /**
-     * Creates a minimal {@link ChatClient} backed by the <b>Google Gemini</b> model.
+     * LLM backend: <b>Gemini (Google cloud API)</b> — uses {@link GoogleGenAiChatModel}
+     * authenticated via {@code spring.ai.google.genai.api-key} ({@code ${OPEN_API_KEY}}).
      *
-     * <p>Uses {@link ChatClient}#create(Model) for direct instantiation with no extra
-     * advisors, system prompts, or default options. Ideal for general-purpose,
-     * unconstrained chat where you want the model's raw behavior.</p>
+     * <p>Minimal {@link ChatClient} with no preset system instructions or advisors.</p>
      *
-     * @param model the {@link GoogleGenAiChatModel} to route requests through
+     * @param model the Google Gemini model
      * @return a vanilla Gemini chat client
      */
     @Bean

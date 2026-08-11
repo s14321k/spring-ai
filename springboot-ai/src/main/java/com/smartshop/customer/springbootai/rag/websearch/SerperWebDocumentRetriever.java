@@ -1,4 +1,4 @@
-package com.smartshop.customer.springbootai.rag;
+package com.smartshop.customer.springbootai.rag.websearch;
 
 import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.Query;

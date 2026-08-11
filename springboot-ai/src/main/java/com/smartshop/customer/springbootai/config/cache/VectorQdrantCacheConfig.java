@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class VectorQdrantCacheConfig {
 
+    /** No LLM — Qdrant vector store for semantic cache entries. Embeddings come from Docker ({@code ai/mxbai-embed-large}). */
     @Bean
     public VectorStore vectorStoreCache(QdrantClient qdrantClient, EmbeddingModel embeddingModel) {
         return QdrantVectorStore.builder(qdrantClient, embeddingModel)
@@ -21,6 +22,11 @@ public class VectorQdrantCacheConfig {
                 .build();
     }
 
+    /**
+     * Embedding backend: <b>Docker Gemma engine</b> ({@code ai/mxbai-embed-large} at
+     * {@code spring.ai.openai.embedding.base-url}, {@code ${IP_ADDRESS}:12434/engines/v1}).
+     * No chat LLM — similarity search only.
+     */
     @Bean
     SemanticCache vectorSemanticCache(VectorStore vectorStoreCache, EmbeddingModel embeddingModel) {
         return DefaultSemanticCache.builder()
@@ -30,6 +36,7 @@ public class VectorQdrantCacheConfig {
                 .build();
     }
 
+    /** No LLM — advisor that intercepts requests to check the Qdrant semantic cache before calling the LLM. */
     @Bean
     public SemanticCacheAdvisor vectorSemanticCacheAdvisor(SemanticCache vectorSemanticCache) {
         return SemanticCacheAdvisor.builder().cache(vectorSemanticCache).build();

@@ -9,14 +9,14 @@ import org.springframework.context.annotation.Configuration;
 public class GemmaClientConfig {
 
     /**
-     * Creates a minimal {@link ChatClient} backed by the <b>OpenAI</b> model.
+     * LLM backend: <b>Gemma (local Docker)</b> — uses {@link OpenAiChatModel} with the
+     * OpenAI-compatible endpoint at {@code spring.ai.openai.chat.base-url}
+     * ({@code ${IP_ADDRESS}:12434/engines/v1}, model {@code ai/gemma3}).
      *
-     * <p>Identical in spirit to {@code genAiChatClient} but wired to
-     * {@link OpenAiChatModel}. Provides a clean, unopinionated client when you need
-     * OpenAI capabilities without preset system instructions or logging.</p>
+     * <p>Minimal {@link ChatClient} with no preset system instructions or advisors.</p>
      *
-     * @param model the {@link OpenAiChatModel} to route requests through
-     * @return a vanilla OpenAI chat client
+     * @param model the Docker-hosted Gemma model exposed via the OpenAI API
+     * @return a vanilla Gemma chat client
      */
     @Bean
     public ChatClient gemmaOpenAiChatClient(OpenAiChatModel model) {

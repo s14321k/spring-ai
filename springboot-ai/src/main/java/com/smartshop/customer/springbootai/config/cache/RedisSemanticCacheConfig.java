@@ -35,6 +35,7 @@ public class RedisSemanticCacheConfig {
      * @param port the Redis server port
      * @return a configured {@link RedisClient} instance
      */
+    /** No LLM — Redis client for semantic cache storage ({@code spring.data.redis.host/port}). */
     @Bean
     RedisClient redisClient(
             @Value("${spring.data.redis.host:localhost}") String host,
@@ -54,6 +55,11 @@ public class RedisSemanticCacheConfig {
      * @param embeddingModel  the model used to generate embeddings for cache keys
      * @return a configured {@link SemanticCache} instance
      */
+    /**
+     * Embedding backend: <b>Docker Gemma engine</b> ({@code ai/mxbai-embed-large} at
+     * {@code spring.ai.openai.embedding.base-url}, {@code ${IP_ADDRESS}:12434/engines/v1}).
+     * No chat LLM — similarity search only.
+     */
     @Bean
     public SemanticCache redisSemanticCache(RedisClient redisClient, EmbeddingModel embeddingModel) {
         return DefaultSemanticCache.builder()
@@ -66,6 +72,7 @@ public class RedisSemanticCacheConfig {
                 .build();
     }
 
+    /** No LLM — advisor that intercepts requests to check the Redis semantic cache before calling the LLM. */
     @Bean
     public SemanticCacheAdvisor redisSemanticCacheAdvisor(SemanticCache redisSemanticCache) {
         return SemanticCacheAdvisor.builder().cache(redisSemanticCache).build();

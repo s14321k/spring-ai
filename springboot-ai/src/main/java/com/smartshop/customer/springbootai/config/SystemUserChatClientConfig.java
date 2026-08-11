@@ -25,7 +25,10 @@ public class SystemUserChatClientConfig {
 
 
     /**
-     * Creates a fully opinionated <b>OpenAI</b> {@link ChatClient} for HR-assistant use.
+     * LLM backend: <b>Gemma (local Docker)</b> — uses {@link OpenAiChatModel} at
+     * {@code spring.ai.openai.chat.base-url} ({@code ${IP_ADDRESS}:12434/engines/v1}).
+     *
+     * <p>Creates a fully opinionated {@link ChatClient} for HR-assistant use.
      *
      * <p>This is the "production-grade" client in the app. It pre-configures:</p>
      * <ul>
@@ -54,7 +57,7 @@ public class SystemUserChatClientConfig {
      *       may still append or override the user content.</li>
      * </ul>
      *
-     * @param model the {@link OpenAiChatModel} to route requests through
+     * @param model the Docker-hosted Gemma model exposed via the OpenAI API
      * @return a hardened HR-assistant chat client
      */
     @Bean
