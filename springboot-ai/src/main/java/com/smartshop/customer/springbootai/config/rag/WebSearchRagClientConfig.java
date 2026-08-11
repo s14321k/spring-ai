@@ -1,7 +1,6 @@
 package com.smartshop.customer.springbootai.config.rag;
 
 import com.smartshop.customer.springbootai.advisors.TokenUsageAuditAdvisor;
-import com.smartshop.customer.springbootai.config.SystemUserChatClientConfig;
 import com.smartshop.customer.springbootai.rag.SerperWebDocumentRetriever;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
@@ -16,61 +15,33 @@ import org.springframework.web.client.RestClient;
 
 import java.util.List;
 
-/**
- * Configures a {@link ChatClient} dedicated to <b>web-search RAG</b>.
- *
- * <p>Unlike {@code ChatClientConfig#chatMemoryClient}, which retrieves context from a
- * local {@code VectorStore}, this client uses {@link SerperWebDocumentRetriever} (Serper Web Search)
- * so every prompt is augmented with live web results before the model call.</p>
- *
- * <p><b>Why a separate config/bean?</b> Vector RAG and web RAG need different
- * {@code DocumentRetriever}s. Keeping them as two named clients
- * ({@code chatMemoryClient} vs {@code webSearchRAGChatClient}) lets controllers pick
- * the source of truth without mixing retrievers on one bean.</p>
- *
- * <p><b>Default advisors:</b> logging, conversation memory, token audit, and
- * {@link RetrievalAugmentationAdvisor} wired to Serper Web Search ({@code maxResults=5}).</p>
- *
- * @see SerperWebDocumentRetriever
- * @see SystemUserChatClientConfig
- */
 @Configuration
 public class WebSearchRagClientConfig {
 
-    /**
-     * Creates and configures a ChatClient bean that combines chat memory, logging,
-     * token usage tracking, and web-search-based Retrieval-Augmented Generation (RAG).
-     *
-     * This client uses Serper Web Search (via SerperWebDocumentRetriever) instead of a local
-     * vector store to fetch relevant documents for augmenting the AI's responses.
-     * The advisors are applied in order: logger → memory → token usage → web search RAG.
-     *
-     * @param model                the OpenAiChatModel to use for generating responses
-     * @param chatMemory           the memory store for maintaining conversation history
-     * @param restClientBuilder    the HTTP client builder used by the web search retriever
-     * @return a fully configured ChatClient bean
-     */
-    @Bean                                                          // Registers this method's return value as a Spring bean
-    public ChatClient webSearchRAGChatClient(OpenAiChatModel model,   // The AI model that will generate responses
-                                             ChatMemory chatMemory,        // Stores past conversation turns for context
-                                             RestClient.Builder restClientBuilder) {  // HTTP client for making web search calls
+    @Bean
+    public ChatClient webSearchRAGChatClient(
+            OpenAiChatModel model,
+            ChatMemory chatMemory,
+            RestClient.Builder restClientBuilder) {
 
-        Advisor loggerAdvisor = new SimpleLoggerAdvisor();          // Logs requests and responses for debugging
-        Advisor tokenUsageAdvisor = new TokenUsageAuditAdvisor();   // Tracks how many tokens are consumed per call
-        Advisor memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();  // Remembers conversation history
+        Advisor loggerAdvisor = new SimpleLoggerAdvisor();
+        Advisor tokenUsageAdvisor = new TokenUsageAuditAdvisor();
+        Advisor memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
 
-        // Web-search equivalent of ChatClientConfig.retrievalAugmentationAdvisor:
-        // same advisor type, different DocumentRetriever (Tavily instead of VectorStore).
-        var webSearchRAGAdvisor = RetrievalAugmentationAdvisor.builder()  // Builds the RAG advisor that fetches external docs
-//                .documentRetriever(GoogleWebSearchDocumentRetriever.builder()  // Uses web search (Google) instead of vector DB
-//                .documentRetriever(WebSearchDocRetriever.builder()  // Uses web search (T) instead of vector DB
-                .documentRetriever(SerperWebDocumentRetriever.builder()       // Uses web search (Serper) instead of vector DB
-                        .restClientBuilder(restClientBuilder).maxResults(5).build())  // Sets HTTP client and limits to 5 search results
-                .build();                                               // Finalizes the web search RAG advisor
+        var webSearchRAGAdvisor = RetrievalAugmentationAdvisor.builder()
+                .documentRetriever(
+                        SerperWebDocumentRetriever.builder()
+                                .restClientBuilder(restClientBuilder)
+                                .maxResults(5)
+                                .build())
+                .build();
 
-        return ChatClient.builder(model)                              // Starts building the ChatClient with the given AI model
-                .defaultAdvisors(List.of(loggerAdvisor, memoryAdvisor, tokenUsageAdvisor,  // Adds all advisors in execution order
+        return ChatClient.builder(model)
+                .defaultAdvisors(List.of(
+                        loggerAdvisor,
+                        memoryAdvisor,
+                        tokenUsageAdvisor,
                         webSearchRAGAdvisor))
-                .build();                                             // Creates the final ChatClient bean
+                .build();
     }
 }
