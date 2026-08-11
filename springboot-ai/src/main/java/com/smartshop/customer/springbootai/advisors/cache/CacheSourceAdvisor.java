@@ -1,6 +1,8 @@
 package com.smartshop.customer.springbootai.advisors.cache;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClientRequest;
 import org.springframework.ai.chat.client.ChatClientResponse;
 import org.springframework.ai.chat.client.advisor.api.CallAdvisor;
@@ -15,6 +17,7 @@ import com.smartshop.customer.springbootai.config.cache.CacheTrackerConfig;
 @Slf4j
 public class CacheSourceAdvisor implements CallAdvisor, StreamAdvisor {
 
+    Logger log =  LoggerFactory.getLogger(CacheSourceAdvisor.class);
     private final String cacheType; // "redis" or "qdrant"
 
     public CacheSourceAdvisor(String cacheType) {

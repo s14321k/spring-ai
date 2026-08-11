@@ -1,4 +1,4 @@
-package com.smartshop.customer.springbootai.controller;
+package com.smartshop.customer.springbootai.controller.rag;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
