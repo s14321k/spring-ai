@@ -38,14 +38,14 @@ public class ChatController {
     private final ChatClient genAiChatClient;
     private final ChatClient openAiChatClient;
     private final ChatClient defaultSystemUserChatClient;
-    private final ChatClient vectorQdrantSearchRAGChatClient;
+    private final ChatClient vectorGeneralRAGChatClient;
 
     public ChatController(@Qualifier("genAiChatClient") ChatClient genAiChatClient, @Qualifier("gemmaOpenAiChatClient") ChatClient openAiChatClient,
-                          @Qualifier("defaultSystemUserChatClient") ChatClient defaultSystemUserChatClient, @Qualifier("vectorQdrantSearchRAGChatClient") ChatClient vectorQdrantSearchRAGChatClient) {
+                          @Qualifier("defaultSystemUserChatClient") ChatClient defaultSystemUserChatClient, @Qualifier("vectorGeneralRAGChatClient") ChatClient vectorGeneralRAGChatClient) {
         this.genAiChatClient = genAiChatClient;
         this.openAiChatClient = openAiChatClient;
         this.defaultSystemUserChatClient = defaultSystemUserChatClient;
-        this.vectorQdrantSearchRAGChatClient = vectorQdrantSearchRAGChatClient;
+        this.vectorGeneralRAGChatClient = vectorGeneralRAGChatClient;
     }
 
     /**
@@ -366,7 +366,7 @@ public class ChatController {
      */
     @GetMapping("/chat-memory")
     public String chatMemory(@RequestParam("message") String message) {
-        return vectorQdrantSearchRAGChatClient
+        return vectorGeneralRAGChatClient
                 .prompt()
                 .user(message)
                 .advisors(advisorSpec -> advisorSpec.param(ChatMemory.CONVERSATION_ID, "default"))
@@ -377,7 +377,7 @@ public class ChatController {
     @GetMapping("/chat-user-memory")
     public String chatMemoryWithUserName(@RequestParam("message") String message,
                                          @RequestHeader("userName") String userName) {
-        return vectorQdrantSearchRAGChatClient
+        return vectorGeneralRAGChatClient
                 .prompt()
                 .user(message)
                 .advisors(advisorSpec -> advisorSpec.param(ChatMemory.CONVERSATION_ID, userName))
