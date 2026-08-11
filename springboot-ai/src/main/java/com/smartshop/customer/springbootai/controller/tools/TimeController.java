@@ -10,9 +10,21 @@ import static org.springframework.ai.chat.memory.ChatMemory.CONVERSATION_ID;
 public class TimeController {
 
     private final ChatClient timeToolsChatClient;
+    private final ChatClient timeChatClient;
 
-    public TimeController(ChatClient timeToolsChatClient) {
+    public TimeController(ChatClient timeToolsChatClient, ChatClient timeChatClient) {
         this.timeToolsChatClient = timeToolsChatClient;
+        this.timeChatClient = timeChatClient;
+    }
+
+    @GetMapping("/local-time-fail")
+    public String localTimeFail(@RequestHeader("username") String username, @RequestParam("message") String message) {
+        return timeChatClient
+                .prompt()
+                .advisors(a -> a.param(CONVERSATION_ID, username))
+                .user(message)
+                .call()
+                .content();
     }
 
     @GetMapping("/local-time")

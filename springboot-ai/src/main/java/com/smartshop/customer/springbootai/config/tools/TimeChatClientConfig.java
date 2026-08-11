@@ -17,6 +17,22 @@ import java.util.List;
 @Configuration
 public class TimeChatClientConfig {
 
+    @Bean
+    public ChatClient timeChatClient(GoogleGenAiChatModel model,
+                                          ChatMemory chatMemory) {
+
+        Advisor loggerAdvisor = new SimpleLoggerAdvisor();
+        Advisor tokenUsageAdvisor = new TokenUsageAuditAdvisor();
+        Advisor memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
+
+        return ChatClient.builder(model)
+                .defaultAdvisors(List.of(
+                        loggerAdvisor,
+                        memoryAdvisor,
+                        tokenUsageAdvisor))
+                .build();
+    }
+
     /**
      * LLM backend: <b>Gemma (local Docker)</b> — uses {@link OpenAiChatModel} at
      * {@code spring.ai.openai.chat.base-url} ({@code ${IP_ADDRESS}:12434/engines/v1}).
