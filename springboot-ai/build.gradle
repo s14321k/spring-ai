@@ -105,6 +105,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-h2console:4.0.0-M1'
 //    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
+    // Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-jpa
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+
     // ═══════════════════════════════════════════════════════════════════════════════
     // Development & Testing
     // ═══════════════════════════════════════════════════════════════════════════════
