@@ -30,7 +30,7 @@ public class HelpDeskTools {
      * request. {@link ToolContext} is provided by Spring AI and is used to
      * get the current username.</p>
      */
-    @Tool(name = "createTicket", description = "Create the support ticket")
+    @Tool(name = "createTicket", description = "Create the support ticket", returnDirect = true)
     String createTicket(
             @ToolParam(description = "Details to create a support ticket")
             TicketRequest ticketRequest,
