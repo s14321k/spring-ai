@@ -14,6 +14,7 @@ import java.util.Map;
 public class HelpDeskController {
 
     private final ChatClient helpDeskChatClient;
+    private final ChatClient helpDeskChatClientBuilderCustomizer;
 
     private final HelpDeskTools helpDeskTools;
 
@@ -23,6 +24,22 @@ public class HelpDeskController {
             @RequestParam("message") String message) {          // Gets the user's message from the request parameter
 
         return helpDeskChatClient.prompt()
+                .advisors(a -> a.param(
+                        ChatMemory.CONVERSATION_ID, username))  // Uses username as the conversation ID for chat memory
+                .user(message)                                  // Sends the user's message to the LLM
+                .tools(helpDeskTools)                           // Makes HelpDeskTools methods available as LLM tools
+                .toolContext(Map.of(
+                        "username", username))              // Passes username to ToolContext for tool methods
+                .call()                                         // Executes the LLM request and any required tools
+                .content();                                     // Returns the final LLM response as a String
+    }
+
+    @GetMapping("/help-desk-ChatClientBuilderCustomizer")
+    public String helpDeskUsingChatClientBuilderCustomizer(
+            @RequestHeader("username") String username,         // Gets the username from the request header
+            @RequestParam("message") String message) {          // Gets the user's message from the request parameter
+
+        return helpDeskChatClientBuilderCustomizer.prompt()
                 .advisors(a -> a.param(
                         ChatMemory.CONVERSATION_ID, username))  // Uses username as the conversation ID for chat memory
                 .user(message)                                  // Sends the user's message to the LLM
